@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+      <title>Voice Generation</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body {
+          font-family: 'Arial', sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 0;
+          background-color: #f4f4f4;
+          color: #333;
+          margin: 0;
+        }
+        
+        .app-bar {
+          background-color: #007bff;
+          color: white;
+          padding: 10px 20px;
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-sizing: border-box;
+        }
+        
+        .app-bar h1 {
+          margin: 0;
+          font-size: 20px;
+        }
+        
+        .app-bar select {
+          padding: 8px;
+          border-radius: 4px;
+          border: none;
+          background-color: white;
+          color: #333;
+        }
+        
+        .main-content {
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .form-container {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+          width: 100%;
+          max-width: 500px;
+          background-color: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        textarea {
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 16px;
+          resize: vertical;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        button {
+          padding: 12px 20px;
+          background: linear-gradient(to right, #007bff, #8a2be2);
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+          transition: background-color 0.3s ease;
+          width: 100%;
+        }
+        
+        button:hover {
+          background: linear-gradient(to right, #0056b3, #6a1ba8);
+        }
+        
+        .modal {
+          display: none;
+          position: fixed;
+          z-index: 1;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0,0,0,0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .modal-content {
+          background-color: white;
+          padding: 20px;
+          border-radius: 8px;
+          width: 90%;
+          max-width: 500px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          position: relative;
+        }
+        
+        .close {
+          color: #aaa;
+          position: absolute;
+          top: 10px;
+          right: 15px;
+          font-size: 28px;
+          font-weight: bold;
+          cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+          color: black;
+          text-decoration: none;
+        }
+        
+        #modalAudioContainer {
+          margin-top: 20px;
+          display: flex;
+          justify-content: center;
+          width: 100%;
+        }
+        
+        #modalAudioContainer audio {
+          width: 100%;
+          max-width: 400px;
+        }
+        
+        .modal-title {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 15px;
+          text-align: center;
+        }
+        
+        #loading {
+          display: none;
+          text-align: center;
+          margin-top: 10px;
+          font-style: italic;
+        }
+        
+        @media (max-width: 600px) {
+          .form-container {
+            padding: 15px;
+          }
+          
+          textarea {
+            font-size: 14px;
+            max-height: 50vh;
+            overflow-y: auto;
+          }
+          
+          button {
+            font-size: 14px;
+          }
+          
+          .modal-content {
+            width: 95%;
+            padding: 15px;
+          }
+          
+          #modalAudioContainer audio {
+            max-width: 100%;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="app-bar">
+        <h1>Voice Generation</h1>
+        <select id="speakerSelect">
+          <option value="1">Speaker 1</option>
+          <option value="2">Speaker 2</option>
+          <option value="3">Speaker 3</option>
+           <option value="4">Speaker 4</option>
+        </select>
+      </div>
+      <div class="main-content">
+        <div class="form-container">
+          <form id="voiceForm">
+            <label for="text">Text:</label><br>
+            <textarea id="text" name="text" rows="4" cols="50"></textarea><br>
+            <button type="submit">Generate</button>
+            <div id="loading">Generating audio...</div>
+          </form>
+        </div>
+        <div id="audioModal" class="modal">
+          <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-title">Audio Preview</div>
+            <div id="modalAudioContainer"></div>
+          </div>
+        </div>
+      </div>
+      <script>
+        const modal = document.getElementById('audioModal');
+        const modalAudioContainer = document.getElementById('modalAudioContainer');
+        const closeBtn = document.querySelector('.close');
+        const loadingDiv = document.getElementById('loading');
+        const form = document.getElementById('voiceForm');
+        const speakerSelect = document.getElementById('speakerSelect');
+        
+        let currentSpeaker = 1;
+        
+        modal.style.display = "none";
+        
+        closeBtn.onclick = function() {
+          modal.style.display = "none";
+          modalAudioContainer.innerHTML = '';
+        }
+        
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+            modalAudioContainer.innerHTML = '';
+          }
+        }
+        
+        speakerSelect.addEventListener('change', function() {
+          currentSpeaker = parseInt(this.value);
+        });
+        
+        form.addEventListener('submit', function(event) {
+          event.preventDefault();
+          const text = document.getElementById('text').value;
+          loadingDiv.style.display = 'block';
+          
+          const volume = currentSpeaker;
+          
+          fetch('/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text, speaker: currentSpeaker, volume: volume }),
+          })
+          .then(response => response.json())
+          .then(data => {
+            loadingDiv.style.display = 'none';
+            if (data.audioUrl) {
+              const audio = new Audio(data.audioUrl);
+              modalAudioContainer.innerHTML = '';
+              modalAudioContainer.appendChild(audio);
+              audio.controls = true;
+              modal.style.display = "flex";
+            } else {
+              alert('Error generating audio');
+            }
+          })
+          .catch(error => {
+            loadingDiv.style.display = 'none';
+            console.error('Error:', error);
+            alert('An error occurred while generating the audio.');
+          });
+        });
+      </script>
+    </body>
+    </html>
